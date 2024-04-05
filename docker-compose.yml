@@ -1,0 +1,10 @@
+version: '3'
+services:
+  broker:
+    build: betBroker
+  service1:
+    build: service1
+  service2:
+    build: service2
+  service3:
+    build: service3
