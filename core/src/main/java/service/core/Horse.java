@@ -1,8 +1,10 @@
 package service.core;
 
+import java.lang.annotation.Documented;
 import java.util.Date;
 
 public class Horse {
+
     public Horse(String horseName, String jockey, String trainer, Integer age, Integer score) {
         this.horseName = horseName;
         this.jockey = jockey;
