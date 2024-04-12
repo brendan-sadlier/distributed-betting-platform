@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="core" />
+        <module name="oddsbuilder" />
         <module name="client" />
         <module name="racesimulator" />
         <module name="service3" />
@@ -14,5 +15,10 @@
         <module name="racegenerator" />
       </profile>
     </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="racegenerator" options="-parameters" />
+    </option>
   </component>
 </project>
