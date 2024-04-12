@@ -4,6 +4,10 @@ import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
 
+/*
+    This class is used for weighted random selection in the RaceSimulator service.
+*/
+
 public class RandomCollection<E> {
     private final NavigableMap<Double, E> map = new TreeMap<Double, E>();
     private final Random random;

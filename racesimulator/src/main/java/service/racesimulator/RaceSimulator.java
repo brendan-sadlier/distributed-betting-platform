@@ -5,6 +5,10 @@ import service.core.Race;
 
 public class RaceSimulator {
 
+    /*
+        Weighted random selection is used to ensure that horses with higher
+        scores have a higher chance of winning.
+    */
     public Horse[] simulateRace(Race race){
         Horse[] winners = new Horse[3];
         RandomCollection<Horse> rc = new RandomCollection<Horse>();
