@@ -24,4 +24,17 @@ public class RaceGeneratorController {
     public Race generateRace() {
         return RGService.generateRace();
     }
+
+    @GetMapping("/test-race")
+    public Race testRace() {
+        List<Horse> horses = Arrays.asList(
+                new Horse("Horse 1", "Brendan", "Sadlier", 3, 100),
+                new Horse("Horse 2", "John", "Doe", 4, 100),
+                new Horse("Horse 3", "Jane", "Doe", 5, 100),
+                new Horse("Horse 4", "John", "Smith", 6, 100),
+                new Horse("Horse 5", "Jane", "Smith", 7, 100)
+        );
+
+        return new Race("Test Race", "Now", horses, Arrays.asList(1.0, 2.0, 3.0, 4.0, 5.0), false);
+    }
 }

@@ -20,13 +20,8 @@ public class RaceGeneratorService {
     private static final String[] COURSES = {"Curragh", "Dundalk", "Fairyhouse", "Leopardstown", "Punchestown", "Thurles"};
     private static final String[] TYPES = {"Cup", "Derby", "Gala", "Sprint", "Classic"};
 
-
-    private final HorseRepository horseRepository;
-
     @Autowired
-    public RaceGeneratorService(HorseRepository horseRepository) {
-        this.horseRepository = horseRepository;
-    }
+    private HorseRepository horseRepository;
 
     public Race generateRace() {
 
@@ -35,7 +30,7 @@ public class RaceGeneratorService {
 
         System.out.println("Fetched " + horses.size() + " horses from the database.");
         Collections.shuffle(horses, new Random(System.currentTimeMillis()));
-        horses = horses.subList(0, Math.min(4, horses.size()));
+        horses = horses.subList(0, Math.min(10, horses.size()));
 
         String raceName = generateRandomCourse() + " " + generateRandomType();
         String raceDateAndTime = LocalDate.now().toString() + " " + generateRandomTime();
