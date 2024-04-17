@@ -18,7 +18,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="racegenerator" options="-parameters" />
+      <module name="racegenerator" options="" />
     </option>
   </component>
 </project>
