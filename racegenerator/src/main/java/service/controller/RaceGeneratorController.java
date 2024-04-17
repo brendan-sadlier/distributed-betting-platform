@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 import service.core.Horse;
 import service.RaceGeneratorService;
 import service.core.Race;
@@ -24,6 +25,14 @@ public class RaceGeneratorController {
     @GetMapping(value = "/generate-races", produces = "application/json")
     public ResponseEntity<Race> generateRace() {
         Race generatedRace = RGService.generateRace();
+
+        RestTemplate template = new RestTemplate();
+
+        ResponseEntity<Race> response = template.postForEntity("http://localhost:8083/odds", generatedRace, Race.class);
+
+        if (response.getStatusCode().equals(HttpStatus.CREATED)) {
+            System.out.println("Location of Resource " + response.getHeaders().getLocation().toString());
+        }
 
         return ResponseEntity
                 .status(HttpStatus.OK)
