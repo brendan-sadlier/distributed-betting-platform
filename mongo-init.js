@@ -44,3 +44,7 @@ db.horse.insertMany([
 ]);
 
 print('Database and collection initialized, and data inserted successfully.');
+
+db.horse.find().forEach(function(horse) {
+    print(JSON.stringify(horse));
+});
