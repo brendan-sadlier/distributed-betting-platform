@@ -1,8 +1,10 @@
 package service.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import service.core.Horse;
@@ -22,6 +24,12 @@ public class BookieController {
     private List<Race> races = new ArrayList<>();
     RestTemplate template = new RestTemplate();
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private WebSocketController webSocketController;
+
     @PostMapping(value = "races", consumes = "application/json")
     public ResponseEntity<Horse> getWinner(@RequestBody Race race) {
         String url = "http://" + getHost() + "8081/races/" + race.dateAndTime;
@@ -37,12 +45,10 @@ public class BookieController {
     public ResponseEntity<Race> getRace() {
         String urlRace = "http:// " + getHost() + "8083/generate-races";
         ResponseEntity<Race> response = template.getForEntity(urlRace, Race.class);
-
         Race race = response.getBody();
-
         assert race != null;
         races.add(race);
-
+        messagingTemplate.convertAndSend("/topic/raceUpdate", race); // Notify all subscribed clients
         return ResponseEntity.ok(race);
     }
 
