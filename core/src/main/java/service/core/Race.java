@@ -1,13 +1,14 @@
 package service.core;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
 public class Race {
 
-    public Race(String name, String dateAndTime, List<Horse> horses, List<Double> horseOdds, boolean hasRan) {
+    public Race(String name, LocalDateTime dateAndTime, List<Horse> horses, List<Double> horseOdds, boolean hasRan) {
         this.raceName = name;
-        this.dateAndTime = dateAndTime;
+        this.dateAndTime = dateAndTime.toString();
         this.horses = horses;
         this.horseOdds = horseOdds;
         this.hasRan = hasRan;

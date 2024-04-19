@@ -44,3 +44,5 @@ db.horse.insertMany([
 ]);
 
 print('Database and collection initialized, and data inserted successfully.');
+lastHorse = db.horse.find().sort({$natural:-1}).limit(1);
+print('Last horse inserted: ', lastHorse[0]);

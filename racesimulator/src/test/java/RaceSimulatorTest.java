@@ -4,6 +4,7 @@ import service.core.Horse;
 import service.core.Race;
 import service.racesimulator.RaceSimulator;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,8 +19,7 @@ public class RaceSimulatorTest {
         horses.add(new Horse("horse3", "jockey3", "trainer3", 6, 40));
         horses.add(new Horse("horse4", "jockey4", "trainer4", 1, 60));
         horses.add(new Horse("horse5", "jockey5", "trainer5", 2, 90));
-
-        Race race = new Race("race1", "Test time", horses, new ArrayList<>(), false);
+        Race race = new Race("race1", LocalDateTime.now(), horses, new ArrayList<>(), false);
         Horse[] winners = simulator.simulateRace(race);
         Assert.assertEquals(3, winners.length);
     }
