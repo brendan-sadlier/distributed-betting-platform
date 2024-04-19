@@ -1,5 +1,6 @@
 package service.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import service.core.Horse;
 import service.RaceGeneratorService;
 import service.core.Race;
 
+import java.io.DataInput;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
