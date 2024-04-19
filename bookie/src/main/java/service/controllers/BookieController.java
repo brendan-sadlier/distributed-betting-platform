@@ -7,21 +7,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import service.core.Bet;
 import service.core.Horse;
 import service.core.Race;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 @RestController
 public class BookieController {
     @Value("${server.port}")
     private int port;
     private List<Race> races = new ArrayList<>();
+    private Map<Integer, Bet> currentRaceBets = new HashMap<>();
     RestTemplate template = new RestTemplate();
 
     @Autowired
