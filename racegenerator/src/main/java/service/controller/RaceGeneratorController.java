@@ -2,6 +2,7 @@ package service.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,16 +32,19 @@ public class RaceGeneratorController {
         this.RGService = RGService;
     }
 
-    @PostMapping(value = "/generate-races")
+    @PostMapping(value = "/generate-races", produces = "application/json")
     public ResponseEntity<Race> generateRace() {
 
         String url = "http://localhost:8082/odds";
         Race race = RGService.generateRace();
         RestTemplate template = new RestTemplate();
+        HttpEntity<Race> request = new HttpEntity<>(race);
 
-        ResponseEntity<Race> response = template.postForEntity(url, race, Race.class);
+        ResponseEntity<Race> response = template.postForEntity(url, request, Race.class);
+        Race raceWithOdds = response.getBody();
 
-        return ResponseEntity.ok(race);
+        assert raceWithOdds != null;
+        return ResponseEntity.ok(raceWithOdds);
     }
 
     @GetMapping(value = "/get-horses")

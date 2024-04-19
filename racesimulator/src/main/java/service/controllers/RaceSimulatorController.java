@@ -19,8 +19,8 @@ public class RaceSimulatorController {
     @PostMapping(value="/races", consumes="application/json")
     public ResponseEntity<Horse[]> simulateRace(@RequestBody Race race) {
         Horse[] winners = simulator.simulateRace(race);
-        races.put(race.dateAndTime.toString(), winners);
-        String url = "http://" + getHost() + "/races/" + race.dateAndTime.toString();
+        races.put(race.dateAndTime, winners);
+        String url = "http://" + getHost() + "/races/" + race.dateAndTime;
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .header("Location", url)

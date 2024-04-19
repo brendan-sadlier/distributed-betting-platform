@@ -22,21 +22,9 @@ public class BookieController {
     private List<Race> races = new ArrayList<>();
     RestTemplate template = new RestTemplate();
 
-//    @GetMapping(value = "races/{raceTime}", consumes = "application/json")
-//    public ResponseEntity<Horse> getWinner(@PathVariable String raceTime) {
-//        String url = "http://localhost:8080/races/" + raceTime;
-//        RestTemplate template = new RestTemplate();
-//
-//        ResponseEntity<Horse[]> response = template.getForEntity(url, Horse[].class);
-//        Horse[] winners = response.getBody();
-//
-//        assert winners != null;
-//        return ResponseEntity.status(HttpStatus.OK).body(winners[0]);
-//    }
-
     @PostMapping(value = "races", consumes = "application/json")
     public ResponseEntity<Horse> getWinner(@RequestBody Race race) {
-        String url = "http://" + getHost() + ":8081/races/" + race.dateAndTime;
+        String url = "http://" + getHost() + "8081/races/" + race.dateAndTime;
 
         ResponseEntity<Horse[]> response = template.getForEntity(url, Horse[].class);
         Horse[] winners = response.getBody();
@@ -47,8 +35,8 @@ public class BookieController {
 
     @GetMapping(value = "races", produces = "application/json")
     public ResponseEntity<Race> getRace() {
-        String url = "http:// " + getHost() + "8083/generate_races";
-        ResponseEntity<Race> response = template.getForEntity(url, Race.class);
+        String urlRace = "http:// " + getHost() + "8083/generate-races";
+        ResponseEntity<Race> response = template.getForEntity(urlRace, Race.class);
 
         Race race = response.getBody();
 

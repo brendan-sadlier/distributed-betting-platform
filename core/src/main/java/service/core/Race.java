@@ -8,7 +8,7 @@ public class Race {
 
     public Race(String name, LocalDateTime dateAndTime, List<Horse> horses, List<Double> horseOdds, boolean hasRan) {
         this.raceName = name;
-        this.dateAndTime = dateAndTime;
+        this.dateAndTime = dateAndTime.toString();
         this.horses = horses;
         this.horseOdds = horseOdds;
         this.hasRan = hasRan;
@@ -17,7 +17,7 @@ public class Race {
     public Race() {}
 
     public String raceName;
-    public LocalDateTime dateAndTime;
+    public String dateAndTime;
     public List<Horse> horses;
     public List<Double> horseOdds;
     public boolean hasRan;
