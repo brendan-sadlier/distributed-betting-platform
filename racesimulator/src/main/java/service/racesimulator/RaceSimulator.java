@@ -9,17 +9,16 @@ public class RaceSimulator {
         Weighted random selection is used to ensure that horses with higher
         scores have a higher chance of winning.
     */
-    public Horse[] simulateRace(Race race){
-        Horse[] winners = new Horse[3];
+    public Horse simulateRace(Race race){
+        Horse winner = new Horse();
         RandomCollection<Horse> rc = new RandomCollection<Horse>();
 
         for (Horse horse : race.horses){
             rc.add(horse.score, horse);
         }
-        for (int i = 0; i < 3; i++){
-            winners[i] = rc.next();
-        }
-        return winners;
+        winner = rc.next();
+
+        return winner;
     }
 
 }

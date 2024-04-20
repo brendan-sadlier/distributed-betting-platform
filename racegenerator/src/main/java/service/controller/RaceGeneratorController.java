@@ -16,15 +16,14 @@ import service.RaceGeneratorService;
 import service.core.Race;
 
 import java.io.DataInput;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 @RestController
 public class RaceGeneratorController {
-
-    @Value("${server.port}")
-    private int port;
 
     private final RaceGeneratorService RGService;
 
@@ -34,9 +33,8 @@ public class RaceGeneratorController {
         this.RGService = RGService;
     }
 
-    @PostMapping(value = "/generate-races", produces = "application/json")
+    @GetMapping(value = "/generate-races", produces = "application/json")
     public ResponseEntity<Race> generateRace() {
-
         String url = "http://localhost:8082/odds";
         Race race = RGService.generateRace();
         RestTemplate template = new RestTemplate();
@@ -54,6 +52,17 @@ public class RaceGeneratorController {
         List<Horse> horses = RGService.getHorses();
 
         return ResponseEntity.ok(horses);
+    }
+
+    @Value("${server.port}")
+    private int port;
+
+    private String getHost(String service_host) {
+        try {
+            return service_host + ":" + port;
+        } catch (Exception e) {
+            return "localhost:" + port;
+        }
     }
 
 }
