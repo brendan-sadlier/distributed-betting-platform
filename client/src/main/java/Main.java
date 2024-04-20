@@ -1,115 +1,104 @@
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.simp.stomp.*;
+import org.springframework.web.socket.client.WebSocketClient;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
 import service.core.Bet;
 import service.core.Horse;
 import service.core.Race;
-
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.lang.reflect.Type;
 import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
 
 public class Main {
-    private static class ClientWebSocket extends WebSocketClient {
-        private static final ObjectMapper objectMapper = new ObjectMapper();
-        public Race currentRace;
 
-        public ClientWebSocket(URI serverUri) {
-            super(serverUri);
-        }
+    private static final String URL = "ws://localhost:8080/bookie-websocket";
+    private static StompSession session;
+    private static final CountDownLatch latch = new CountDownLatch(1);
 
-        @Override
-        public void onOpen(ServerHandshake handshakedata) {
-            System.out.println("Connected to the server");
-        }
+    public static void main(String[] args) throws InterruptedException {
+        WebSocketClient client = new StandardWebSocketClient();
+        WebSocketStompClient stompClient = new WebSocketStompClient(client);
+        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        @Override
-        public void onMessage(String message) {
-            if (message.trim().startsWith("{")) {
-                // Handle JSON message as Race object
-                try {
-                    Race race = objectMapper.readValue(message, Race.class);
-                    currentRace = race;
-                    displayRace(race);
-                    inputBet();
-                } catch (Exception e) {
-                    System.err.println("Error processing JSON message: " + e.getMessage());
-                }
-            } else {
-                // Bet results are received from the bookie as Strings that can be printed
-                // straight to the command line
-                System.out.println(message);
-            }
-        }
-
-        @Override
-        public void onClose(int code, String reason, boolean remote) {
-            System.out.println("Disconnected from server: " + reason);
-        }
-
-        @Override
-        public void onError(Exception ex) {
-            System.out.println("An error occurred: " + ex.getMessage());
-        }
-
-        private static void displayRace(Race race) {
-            System.out.println("|===============================================================================================================|");
-            System.out.println("| Race: " + race.raceName +" \t\tTime of Race: " + race.dateAndTime + "\t\t\t\t\t\t\t\t\t|");
-            System.out.println("|---------------------------------------------------------------------------------------------------------------|");
-            for (int i = 0; i < race.horses.size(); i++){
-                displayHorse(race.horses.get(i), race.horseOdds.get(i));
-            }
-            System.out.println("|===============================================================================================================|");
-        }
-
-        private static void displayHorse(Horse horse, Double odds){
-            System.out.println(
-                    "| Horse: " + horse.horseName + "\t\tJockey: " + horse.jockey + "\t\tTrainer: " + horse.trainer +
-                            "\t\tAge: " + horse.age + "\t\tOdds: " + odds + "\t|");
-        }
-
-        private void inputBet(){
-            Scanner scanner = new Scanner(System.in);
-            while (true) {
-                System.out.println("Enter your bet in the format 'HorseName Amount'" +
-                        " or type 'quit' to not place a bet:");
-                String input = scanner.nextLine();
-                if ("quit".equalsIgnoreCase(input)) {
-                    break;
-                }
-                try {
-                    String[] parts = input.split(" ");
-                    String horseName = parts[0];
-                    Integer amount = Integer.parseInt(parts[1]);
-
-                    boolean horseExists = currentRace.horses.stream()
-                            .anyMatch(horse -> horseName.equals(horse.horseName));
-
-                    if (horseExists){
-                        Bet bet = new Bet(horseName, amount);
-                        String jsonBet = objectMapper.writeValueAsString(bet);
-                        send(jsonBet);  // Sending bet details to the server
-                        break;
-                    }else{
-                        System.out.println("Invalid horse name. Please enter a valid bet.");
+        stompClient.connect(URL, new StompSessionHandlerAdapter() {
+            @Override
+            public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+                session.subscribe("/user/queue/personalRaceUpdate", new StompFrameHandler() {
+                    @Override
+                    public Type getPayloadType(StompHeaders headers) {
+                        return Race.class;
                     }
-                } catch (Exception e) {
-                    System.out.println("Invalid input. Please try again.");
-                }
+
+                    @Override
+                    public void handleFrame(StompHeaders headers, Object payload) {
+                        Race race = (Race) payload;
+                        displayRace(race);
+                        // Additional handling to display the race
+                    }
+                });
+                session.subscribe("/topic/raceUpdates", new StompFrameHandler() {
+                    @Override
+                    public Type getPayloadType(StompHeaders headers) {
+                        return Race.class;
+                    }
+
+                    @Override
+                    public void handleFrame(StompHeaders headers, Object payload) {
+                        Race race = (Race) payload;
+                        displayRace(race);
+                        handleUserInput(session);
+                    }
+                });
+                Main.session = session;
             }
-            scanner.close();
+
+            @Override
+            public void handleException(StompSession session, StompCommand command, StompHeaders headers,
+                                        byte[] payload, Throwable exception) {
+                System.err.println("Got an exception: " + exception.getMessage());
+            }
+        });
+
+        latch.await();  // Wait indefinitely, keeping the program running
+    }
+
+    private static void handleUserInput(StompSession session) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter your bet in the format 'HorseName Amount', or type 'quit' to exit:");
+        while (true) {
+            String input = scanner.nextLine();
+            if ("quit".equalsIgnoreCase(input)) {
+                latch.countDown();  // Allow the application to terminate
+                break;
+            }
+            try {
+                String[] parts = input.split(" ");
+                String horseName = parts[0];
+                int amount = Integer.parseInt(parts[1]);
+                Bet bet = new Bet(horseName, amount);
+                session.send("/app/bet", bet);
+
+                break;
+            } catch (Exception e) {
+                System.out.println("Invalid input. Please try again.");
+            }
         }
-
+        scanner.close();
     }
 
-    public static void main(String[] args) throws URISyntaxException {
-        ObjectMapper objectMapper = new ObjectMapper();
-            URI uri = new URI("ws://localhost:8080/bookie-websocket");
-            ClientWebSocket client = new ClientWebSocket(uri);
-            client.connect();
+    private static void displayRace(Race race) {
+        System.out.println("|===============================================================================================|");
+        System.out.println(String.format("| Race: %-20s Time of Race: %-30s |", race.raceName, race.dateAndTime));
+        System.out.println("|-----------------------------------------------------------------------------------------------|");
+        for (int i = 0; i < race.horses.size(); i++) {
+            displayHorse(race.horses.get(i), race.horseOdds.get(i));
+        }
+        System.out.println("|===============================================================================================|");
     }
 
+    private static void displayHorse(Horse horse, Double odds) {
+        System.out.println(String.format("| Horse: %-15s Jockey: %-15s Trainer: %-15s Age: %-3d Odds: %-6.2f |",
+                horse.horseName, horse.jockey, horse.trainer, horse.age, odds));
+    }
 }
-
-
-

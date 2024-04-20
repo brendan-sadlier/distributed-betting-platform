@@ -6,6 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,7 +19,9 @@ import service.core.Horse;
 import service.core.Race;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.Principal;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Controller
@@ -39,16 +42,13 @@ public class BookieController {
 
     @EventListener
     public void handleClientConnection(SessionConnectedEvent event) {
-        String sessionId = StompHeaderAccessor.wrap(event.getMessage()).getSessionId();
-        System.out.println("Client connected: " + sessionId);
-        if (currentRace == null){
-            // If no race has been generated, get one from the RaceGenerator service
-            currentRace = getNewRace();
+        String sessionId = SimpMessageHeaderAccessor.getSessionId(event.getMessage().getHeaders());
+        if (sessionId != null && currentRace != null) {
+            System.out.println("New client connected: "+ sessionId);
+            messagingTemplate.convertAndSendToUser(sessionId, "/queue/personalRaceUpdate", currentRace);
         }
-        // send the current Race to the Client
-        assert sessionId != null;
-        messagingTemplate.convertAndSendToUser(sessionId, "/queue/race", currentRace);
     }
+
 
     @EventListener
     public void handleWebSocketDisconnect(SessionDisconnectEvent event) {
@@ -66,8 +66,7 @@ public class BookieController {
         System.out.println("Received bet from " + sessionId + ": " + bet);
     }
 
-    // @Scheduled(fixedRate = 60000, initialDelay = 60000)
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60000, initialDelay = 60000)
     public void simulateCurrentRace() {
         System.out.println("Simulating current race");
         if (currentRace == null) {
@@ -107,15 +106,14 @@ public class BookieController {
     private void notifyWinnersAndLosers(Horse winner, double odds){
         // notify each client that has placed a bet on what amount they won, or if their horse lost
         for (Map.Entry<String, Bet> clientBet : clientBets.entrySet()){
-            String destination = "/user/" +clientBet.getKey()+"/queue/updates";
             StringBuilder message = new StringBuilder("The winning horse is ").append(winner.horseName);
             if (clientBet.getValue().horseName.equals(winner.horseName)){
                 double amountWon = getReward(clientBet.getValue().amount, odds);
                 message.append("\nCongratulations! You have won ").append(amountWon);
-                messagingTemplate.convertAndSendToUser(clientBet.getKey(), destination, message);
+                messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/personal/results", message);
             }else{
                 message.append("\nUnfortunately your horse did not win :(");
-                messagingTemplate.convertAndSendToUser(clientBet.getKey(), destination, message);
+                messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/personal/results", message);
             }
         }
     }
