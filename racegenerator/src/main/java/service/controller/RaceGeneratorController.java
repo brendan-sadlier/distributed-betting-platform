@@ -40,7 +40,7 @@ public class RaceGeneratorController {
         RestTemplate template = new RestTemplate();
         HttpEntity<Race> request = new HttpEntity<>(race);
 
-        ResponseEntity<Race> response = template.postForEntity(urlOdds, request, Race.class);
+        ResponseEntity<Race> response = template.postForEntity(url, request, Race.class);
         Race raceWithOdds = response.getBody();
 
         assert raceWithOdds != null;
