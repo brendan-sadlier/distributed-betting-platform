@@ -2,13 +2,12 @@ package service.core;
 
 public class Bet {
 
-    public Bet(Horse horse, Integer amount) {
-        this.horse = horse;
+    public Bet(String horseName, Integer amount) {
+        this.horseName = horseName;
         this.amount = amount;
     }
 
     public Bet() {}
-
-    public Horse horse;
+    public String horseName;
     public Integer amount;
 }
