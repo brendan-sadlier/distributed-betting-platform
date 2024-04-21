@@ -1,13 +1,29 @@
 version: '3'
 services:
+
 #  broker:
-#    build: betBroker
-#  service1:
-#    build: service1
-#  service2:
-#    build: service2
-#  service3:
-#    build: service3
+#    build: ./broker
+#    port:
+#    - "8080:8080"
+#    depends_on:
+#      - racegenerator
+#      - racesimulator
+#      - oddsbuilder
+#
+#  racegenerator:
+#    build: ./racegenerator
+#    ports:
+#      - "8083:8083"
+#
+#  racesimulator:
+#    build: ./racesimulator
+#    ports:
+#      - "8081:8081"
+#
+#  oddsbuilder:
+#    build: ./oddsbuilder
+#    ports:
+#      - "8082:8082"
 
   mongodb:
     image: mongo:latest
