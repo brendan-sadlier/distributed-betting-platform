@@ -13,28 +13,28 @@ import service.racesimulator.RaceSimulator;
 
 @RestController
 public class RaceSimulatorController {
-    private final Map<String, Horse[]> races = new TreeMap<>();
+    private final Map<String, Horse> races = new TreeMap<>();
     private final RaceSimulator simulator = new RaceSimulator();
 
     @PostMapping(value="/races", consumes="application/json")
-    public ResponseEntity<Horse[]> simulateRace(@RequestBody Race race) {
-        Horse[] winners = simulator.simulateRace(race);
-        races.put(race.dateAndTime, winners);
+    public ResponseEntity<Horse> simulateRace(@RequestBody Race race) {
+        Horse winner = simulator.simulateRace(race);
+        races.put(race.dateAndTime, winner);
         String url = "http://" + getHost() + "/races/" + race.dateAndTime;
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .header("Location", url)
                 .header("Content-Location", url)
-                .body(winners);
+                .body(winner);
     }
 
     @GetMapping(value="/races/{raceTime}", produces={"application/json"})
-    public ResponseEntity<Horse[]> getRace(@PathVariable String raceTime) {
-        Horse[] winners = races.get(raceTime);
-        if (winners == null) {
+    public ResponseEntity<Horse> getRace(@PathVariable String raceTime) {
+        Horse winner = races.get(raceTime);
+        if (winner == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.status(HttpStatus.OK).body(winners);
+        return ResponseEntity.status(HttpStatus.OK).body(winner);
     }
 
     @Value("${server.port}")

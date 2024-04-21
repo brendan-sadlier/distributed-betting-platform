@@ -19,7 +19,7 @@ public class OddsBuilderController {
     public ResponseEntity<Race> createOdds(@RequestBody Race race) {
         Race raceWithOdds = oddsBuilder.generateOdds(race);
         races.put(race.dateAndTime.toString(), race);
-        String url = "http://" + getHost() + "/odds/" + raceWithOdds.dateAndTime.toString();
+        String url = "http://localhost:8082/odds/" + raceWithOdds.dateAndTime.toString();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .header("Location", url)
