@@ -66,8 +66,8 @@ public class BookieController {
         System.out.println("Received bet from " + sessionId + ": " + bet);
     }
 
-    @Scheduled(fixedRate = 60000, initialDelay = 60000)
-    public void simulateCurrentRace() {
+    @Scheduled(fixedRate = 20000, initialDelay = 20000)
+    public void simulateCurrentRace() throws InterruptedException {
         System.out.println("Simulating current race");
         if (currentRace == null) {
             currentRace = getNewRace();  // Ensure there is always a race to simulate
@@ -91,6 +91,7 @@ public class BookieController {
         Double odds = currentRace.horseOdds.get(i);
 
         notifyWinnersAndLosers(winner, odds);
+        Thread.sleep(1000);
         currentRace = getNewRace();
         messagingTemplate.convertAndSend(RACE_UPDATES_TOPIC, currentRace);
     }
@@ -110,11 +111,12 @@ public class BookieController {
             if (clientBet.getValue().horseName.equals(winner.horseName)){
                 double amountWon = getReward(clientBet.getValue().amount, odds);
                 message.append("\nCongratulations! You have won ").append(amountWon);
-                messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/personal/results", message);
             }else{
                 message.append("\nUnfortunately your horse did not win :(");
-                messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/personal/results", message);
             }
+            System.out.println("Sending bet result to user "+ clientBet.getKey());
+            messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/queue/results", message.toString());
+            clientBets.remove(clientBet.getKey());
         }
     }
 
