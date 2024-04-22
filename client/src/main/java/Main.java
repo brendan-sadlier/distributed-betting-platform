@@ -110,7 +110,6 @@ public class Main {
     private static void handleUserInput() {
         System.out.println("Enter your bet in the format 'HorseName Amount', or type 'quit' to exit:");
         while (true) {
-            // Check if user input is available, non-blocking way
             if (scanner.hasNextLine()) {
                 String input = scanner.nextLine();
                 if ("quit".equalsIgnoreCase(input)) {
@@ -118,8 +117,9 @@ public class Main {
                     latch.countDown();  // Allow the application to terminate
                     break;
                 }
-                processInput(input);
-                break;
+                if (processInput(input)) {
+                    break;
+                }
             }
             try {
                 Thread.sleep(100);
@@ -132,23 +132,24 @@ public class Main {
     }
 
 
-    private static void processInput(String input) {
-        while (true){
-            try {
-                String[] parts = input.split(" ");
-                String horseName = parts[0];
-                int amount = Integer.parseInt(parts[1]);
-                Bet bet = new Bet(horseName, amount);
-                if (session != null) {
-                    session.send("/app/bet", bet);
-                    System.out.println("Bet of " + amount + " on horse " + horseName + " successfully placed.");
-                }
-                break;
-            } catch (Exception e) {
-                System.out.println("Invalid input. Please try again.");
+
+    private static boolean processInput(String input) {
+        try {
+            String[] parts = input.split(" ");
+            String horseName = parts[0];
+            int amount = Integer.parseInt(parts[1]);
+            Bet bet = new Bet(horseName, amount);
+            if (session != null) {
+                session.send("/app/bet", bet);
+                System.out.println("Bet of " + amount + " on horse " + horseName + " successfully placed.");
             }
+            return true; // Return true when processing is successful
+        } catch (Exception e) {
+            System.out.println("Invalid input. Please try again.");
+            return false; // Return false when an error occurs
         }
     }
+
 
 
     private static void displayRace(Race race) {
