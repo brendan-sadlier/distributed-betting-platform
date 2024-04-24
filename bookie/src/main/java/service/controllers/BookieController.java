@@ -110,7 +110,7 @@ public class BookieController {
     }
 
     private Race getNewRace(){
-        String urlRace = "http://localhost:8083/generate-races";
+        String urlRace = "http://racegenerator:8083/generate-races";
         ResponseEntity<Race> response = template.getForEntity(urlRace, Race.class);
         Race race = response.getBody();
         assert race != null;
