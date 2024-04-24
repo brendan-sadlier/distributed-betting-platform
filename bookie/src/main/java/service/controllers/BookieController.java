@@ -110,10 +110,15 @@ public class BookieController {
     }
 
     private Race getNewRace(){
-        String urlRace = "http://racegenerator:8083/generate-races";
+        String urlRace = "http://localhost:8083/generate-races";
         ResponseEntity<Race> response = template.getForEntity(urlRace, Race.class);
         Race race = response.getBody();
         assert race != null;
+        System.out.println("New race created.");
+        System.out.println("Horses in Race:");
+        for (Horse horse : race.horses){
+            System.out.println(horse.horseName);
+        }
         return race;
     }
 
