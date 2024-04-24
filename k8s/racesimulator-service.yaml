@@ -1,0 +1,13 @@
+# racesimulator-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: racesimulator-service
+spec:
+  type: ClusterIP
+  selector:
+    app: racesimulator
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081

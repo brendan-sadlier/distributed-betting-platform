@@ -80,7 +80,7 @@ public class BookieController {
         for (Horse horse : currentRace.horses){
             System.out.println("Horse in race: "+horse.horseName);
         }
-        String url = "http://racesimulator:8081/races/";
+        String url = "http://racesimulator-service:8081/races";
         // Create an HttpEntity object that wraps the currentRace object to be sent as request body
         HttpEntity<Race> requestEntity = new HttpEntity<>(currentRace);
         ResponseEntity<Horse> response = template.postForEntity(url, requestEntity, Horse.class);
@@ -110,7 +110,7 @@ public class BookieController {
     }
 
     private Race getNewRace(){
-        String urlRace = "http://racegenerator:8083/generate-races";
+        String urlRace = "http://racegenerator-service:8083/generate-races";
         ResponseEntity<Race> response = template.getForEntity(urlRace, Race.class);
         Race race = response.getBody();
         assert race != null;
