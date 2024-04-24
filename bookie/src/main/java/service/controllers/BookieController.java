@@ -103,7 +103,10 @@ public class BookieController {
     }
 
     private void broadCastNewRace(){
-
+        currentRace = getNewRace();
+        currentRaceId += 1;
+        currentRace.raceEndpoint = RACE_UPDATES_TOPIC + "/" + currentRaceId;
+        messagingTemplate.convertAndSend(RACE_UPDATES_TOPIC, currentRace);
     }
 
     private Race getNewRace(){
