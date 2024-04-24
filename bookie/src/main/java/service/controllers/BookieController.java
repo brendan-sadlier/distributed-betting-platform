@@ -13,20 +13,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
-import service.core.Bet;
 import service.core.Horse;
 import service.core.Race;
 import service.core.Winner;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Controller
 public class BookieController {
     @Value("${server.port}")
     private int port;
-    private final ConcurrentHashMap<String, Bet> clientBets = new ConcurrentHashMap<>();
     private final SimpMessagingTemplate messagingTemplate;
     private Race currentRace;
     private int currentRaceId = 0;
@@ -44,7 +40,6 @@ public class BookieController {
         String sessionId = SimpMessageHeaderAccessor.getSessionId(event.getMessage().getHeaders());
         if (sessionId != null && currentRace != null) {
             System.out.println("New client connected: "+ sessionId);
-            messagingTemplate.convertAndSendToUser(sessionId, "/queue/personalRaceUpdate", currentRace);
         }
     }
 
@@ -52,7 +47,6 @@ public class BookieController {
     public void handleWebSocketDisconnect(SessionDisconnectEvent event) {
         String sessionId = StompHeaderAccessor.wrap(event.getMessage()).getSessionId();
         assert sessionId != null;
-        clientBets.remove(sessionId);
         System.out.println("Client disconnected: " + sessionId);
     }
 
@@ -96,10 +90,6 @@ public class BookieController {
             System.out.println(horse.horseName);
         }
         return race;
-    }
-
-    private Double getReward(Integer betSize, Double odds) {
-        return betSize.doubleValue() * odds;
     }
 
     private String getHost() {
