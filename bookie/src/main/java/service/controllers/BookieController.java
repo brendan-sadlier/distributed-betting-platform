@@ -34,7 +34,6 @@ public class BookieController {
 
     private List<String> servicesUrls = new ArrayList<>();
 
-    private final ConcurrentHashMap<String, Bet> clientBets = new ConcurrentHashMap<>();
     private final SimpMessagingTemplate messagingTemplate;
     private Race currentRace;
     private int currentRaceId = 0;
@@ -61,7 +60,6 @@ public class BookieController {
         String sessionId = SimpMessageHeaderAccessor.getSessionId(event.getMessage().getHeaders());
         if (sessionId != null && currentRace != null) {
             System.out.println("New client connected: "+ sessionId);
-            messagingTemplate.convertAndSendToUser(sessionId, "/queue/personalRaceUpdate", currentRace);
         }
     }
 
@@ -69,7 +67,6 @@ public class BookieController {
     public void handleWebSocketDisconnect(SessionDisconnectEvent event) {
         String sessionId = StompHeaderAccessor.wrap(event.getMessage()).getSessionId();
         assert sessionId != null;
-        clientBets.remove(sessionId);
         System.out.println("Client disconnected: " + sessionId);
     }
 
@@ -98,27 +95,15 @@ public class BookieController {
         Winner winner = new Winner(winningHorse, currentRace.horseOdds.get(i));
         messagingTemplate.convertAndSend(currentRace.raceEndpoint, winner);
 
-        for (Map.Entry<String, Bet> clientBet : clientBets.entrySet()){
-            StringBuilder message = new StringBuilder();
-            if (clientBet.getValue().horseName.equals(winner.horseName)){
-                double amountWon = getReward(clientBet.getValue().amount, odds);
-                message.append("The dinning horse is ")
-                        .append(winner.horseName)
-                        .append("\nCongratulations! You have won ").append(amountWon);
-            }else{
-                message.append("\nUnfortunately your horse did not win :(");
-            }
-            System.out.println("Sending bet result to user "+ clientBet.getKey());
-            messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/queue/results", message.toString());
-//            clientBets.remove(clientBet.getKey());
-        }
-
-//        notifyWinnersAndLosers(winner, odds);
         Thread.sleep(10000);
         currentRace = getNewRace();
         currentRaceId += 1;
         currentRace.raceEndpoint = RACE_UPDATES_TOPIC + "/" + currentRaceId;
         messagingTemplate.convertAndSend(RACE_UPDATES_TOPIC, currentRace);
+    }
+
+    private void broadCastNewRace(){
+
     }
 
     private Race getNewRace(){
@@ -127,29 +112,6 @@ public class BookieController {
         Race race = response.getBody();
         assert race != null;
         return race;
-    }
-
-    private void notifyWinnersAndLosers(Horse winner, double odds){
-        // notify each client that has placed a bet on what amount they won, or if their horse lost
-        for (Map.Entry<String, Bet> clientBet : clientBets.entrySet()){
-            StringBuilder message = new StringBuilder();
-            if (clientBet.getValue().horseName.equals(winner.horseName)){
-                double amountWon = getReward(clientBet.getValue().amount, odds);
-                message.append("The dinning horse is ")
-                        .append(winner.horseName)
-                        .append("\nCongratulations! You have won ").append(amountWon);
-            }else{
-                message.append("\nUnfortunately your horse did not win :(");
-            }
-            System.out.println("Sending bet result to user "+ clientBet.getKey());
-            messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/queue/results", message.toString());
-//            clientBets.remove(clientBet.getKey());
-        }
-        return race;
-    }
-
-    private Double getReward(Integer betSize, Double odds) {
-        return betSize.doubleValue() * odds;
     }
 
     private String getHost() {
