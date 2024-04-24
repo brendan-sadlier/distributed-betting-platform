@@ -57,7 +57,7 @@ public class BookieController {
         System.out.println("Client disconnected: " + sessionId);
     }
 
-    @Scheduled(fixedRate = 20000, initialDelay = 20000)
+    @Scheduled(fixedRate = 60000, initialDelay = 10000)
     public void simulateCurrentRace() throws InterruptedException {
         System.out.println("Simulating current race");
         String url = "http://localhost:8081/races/";
