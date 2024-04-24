@@ -11,6 +11,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
@@ -19,6 +21,8 @@ import service.core.Horse;
 import service.core.Race;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,6 +30,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BookieController {
     @Value("${server.port}")
     private int port;
+
+    private List<String> servicesUrls = new ArrayList<>();
+
     private final ConcurrentHashMap<String, Bet> clientBets = new ConcurrentHashMap<>();
     private final SimpMessagingTemplate messagingTemplate;
     private Race currentRace;
@@ -38,6 +45,14 @@ public class BookieController {
         currentRace = getNewRace();
     }
 
+
+    @PostMapping(value = "/services", consumes = "application/json")
+    public ResponseEntity<Void> registerService(@RequestBody String url) {
+        servicesUrls.add(url);
+        return ResponseEntity
+                .ok()
+                .build();
+    }
 
     @EventListener
     public void handleClientConnection(SessionConnectedEvent event) {
@@ -75,7 +90,7 @@ public class BookieController {
         for (Horse horse : currentRace.horses){
             System.out.println("Horse in race: "+horse.horseName);
         }
-        String url = "http://localhost:8081/races/";
+        String url = "http://racesimulator:8081/races/";
         // Create an HttpEntity object that wraps the currentRace object to be sent as request body
         HttpEntity<Race> requestEntity = new HttpEntity<>(currentRace);
         ResponseEntity<Horse> response = template.postForEntity(url, requestEntity, Horse.class);
@@ -89,14 +104,29 @@ public class BookieController {
         }
         Double odds = currentRace.horseOdds.get(i);
 
-        notifyWinnersAndLosers(winner, odds);
-        Thread.sleep(1000);
+        for (Map.Entry<String, Bet> clientBet : clientBets.entrySet()){
+            StringBuilder message = new StringBuilder();
+            if (clientBet.getValue().horseName.equals(winner.horseName)){
+                double amountWon = getReward(clientBet.getValue().amount, odds);
+                message.append("The dinning horse is ")
+                        .append(winner.horseName)
+                        .append("\nCongratulations! You have won ").append(amountWon);
+            }else{
+                message.append("\nUnfortunately your horse did not win :(");
+            }
+            System.out.println("Sending bet result to user "+ clientBet.getKey());
+            messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/queue/results", message.toString());
+//            clientBets.remove(clientBet.getKey());
+        }
+
+//        notifyWinnersAndLosers(winner, odds);
+        Thread.sleep(10000);
         currentRace = getNewRace();
         messagingTemplate.convertAndSend(RACE_UPDATES_TOPIC, currentRace);
     }
 
     private Race getNewRace(){
-        String urlRace = "http://localhost:8083/generate-races";
+        String urlRace = "http://racegenerator:8083/generate-races";
         ResponseEntity<Race> response = template.getForEntity(urlRace, Race.class);
         Race race = response.getBody();
         assert race != null;
@@ -106,16 +136,18 @@ public class BookieController {
     private void notifyWinnersAndLosers(Horse winner, double odds){
         // notify each client that has placed a bet on what amount they won, or if their horse lost
         for (Map.Entry<String, Bet> clientBet : clientBets.entrySet()){
-            StringBuilder message = new StringBuilder("The winning horse is ").append(winner.horseName);
+            StringBuilder message = new StringBuilder();
             if (clientBet.getValue().horseName.equals(winner.horseName)){
                 double amountWon = getReward(clientBet.getValue().amount, odds);
-                message.append("\nCongratulations! You have won ").append(amountWon);
+                message.append("The dinning horse is ")
+                        .append(winner.horseName)
+                        .append("\nCongratulations! You have won ").append(amountWon);
             }else{
                 message.append("\nUnfortunately your horse did not win :(");
             }
             System.out.println("Sending bet result to user "+ clientBet.getKey());
             messagingTemplate.convertAndSendToUser(clientBet.getKey(), "/queue/results", message.toString());
-            clientBets.remove(clientBet.getKey());
+//            clientBets.remove(clientBet.getKey());
         }
     }
 
@@ -127,7 +159,7 @@ public class BookieController {
         try {
             return InetAddress.getLocalHost().getHostAddress() + ":";
         } catch (UnknownHostException e) {
-            return "localhost";
+            return "localhost" + port;
         }
     }
 }
