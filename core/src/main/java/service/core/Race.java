@@ -21,4 +21,5 @@ public class Race {
     public List<Horse> horses;
     public List<Double> horseOdds;
     public boolean hasRan;
+    public String raceEndpoint;
 }
