@@ -1,0 +1,23 @@
+# racesimulator-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: racesimulator-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: racesimulator
+  template:
+    metadata:
+      labels:
+        app: racesimulator
+    spec:
+      containers:
+        - name: racesimulator
+          image: brendansadlier/blt-racesimulator:latest
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SPRING_DATA_MONGODB_URI
+              value: mongodb://mongo-service:27017/blt
