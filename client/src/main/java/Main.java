@@ -6,16 +6,24 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 import service.core.Bet;
 import service.core.Horse;
 import service.core.Race;
+import service.core.Winner;
+
 import java.lang.reflect.Type;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Main {
 
     private static final String URL = "ws://localhost:8080/bookie-websocket";
     private static StompSession session;
+    private static String currentRaceEndpoint;
+    private static Bet currentBet;
     private static final CountDownLatch latch = new CountDownLatch(1);
     private static final Scanner scanner = new Scanner(System.in);
+    private static final Object scannerLock = new Object();
+    static ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     private static class MessageProcessor implements Runnable {
         private final Object message;
@@ -28,19 +36,26 @@ public class Main {
         public void run() {
             if (message instanceof Race) {
                 processRace((Race) message);
-            } else if (message instanceof String) {
-                processBetResult((String) message);
+            } else if (message instanceof Winner) {
+                processBetResult((Winner) message);
             } else {
                 System.err.println("Unhandled message type: " + message.getClass());
             }
         }
         private void processRace(Race race) {
             displayRace(race);
+            currentRaceEndpoint = race.raceEndpoint;
             handleUserInput();
         }
 
-        private void processBetResult(String message) {
-            System.out.println("Bet Result: " + message);
+        private void processBetResult(Winner winner) {
+            System.out.println("The winning horse was "+winner.horse.horseName);
+            if (currentBet.horseName.equals(winner.horse.horseName)){
+                double amountWon = currentBet.amount * winner.odds;
+                System.out.println("Congratulations! You have won €"+amountWon+"\n");
+            }else{
+                System.out.println("Hard luck, you're horse did not win :(\n");
+            }
         }
     }
 
@@ -55,18 +70,6 @@ public class Main {
             public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                 System.out.println("Connected to bookie at: " + URL);
                 Main.session = session;
-                session.subscribe("/user/queue/personalRaceUpdate", new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders headers) {
-                        return Race.class;
-                    }
-                    @Override
-                    public void handleFrame(StompHeaders headers, Object payload) {
-                        Thread processingThread = new Thread(new MessageProcessor(payload));
-                        processingThread.start();
-                    }
-                });
-                System.out.println("Subscribed to /user/queue/personalRaceUpdate");
                 session.subscribe("/topic/raceUpdates", new StompFrameHandler() {
                     @Override
                     public Type getPayloadType(StompHeaders headers) {
@@ -74,26 +77,11 @@ public class Main {
                     }
                     @Override
                     public void handleFrame(StompHeaders headers, Object payload) {
-                        Thread processingThread = new Thread(new MessageProcessor(payload));
-                        processingThread.start();
+                        executorService.execute(new MessageProcessor(payload));
                     }
                 });
                 System.out.println("Subscribed to /topic/raceUpdates");
-                session.subscribe("/user/queue/results", new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders headers) {
-                        return String.class;
-                    }
-                    @Override
-                    public void handleFrame(StompHeaders headers, Object payload) {
-                        System.out.println("Bet message received from bookie");
-                        Thread processingThread = new Thread(new MessageProcessor(payload));
-                        processingThread.start();
-                    }
-                });
-                System.out.println("Subscribed to /user/queue/results");
             }
-
             @Override
             public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
                 exception.printStackTrace();
@@ -108,29 +96,25 @@ public class Main {
     }
 
     private static void handleUserInput() {
-        System.out.println("Enter your bet in the format 'HorseName Amount', or type 'quit' to exit:");
+        System.out.println("Enter your bet in the format 'HorseName Amount', or type 'no' to not bet on this race:");
         while (true) {
-            if (scanner.hasNextLine()) {
-                String input = scanner.nextLine();
-                if ("quit".equalsIgnoreCase(input)) {
-                    System.out.println("Exiting...");
-                    latch.countDown();  // Allow the application to terminate
+            String input = null;
+            synchronized (scannerLock) {
+                if (scanner.hasNextLine()) {
+                    input = scanner.nextLine();
+                }
+            }
+            if (input != null) {
+                if ("no".equalsIgnoreCase(input)) {
+                    System.out.println("No bet placed on this race\n");
                     break;
                 }
                 if (processInput(input)) {
                     break;
                 }
             }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("Thread interrupted: " + e.getMessage());
-                break;
-            }
         }
     }
-
 
 
     private static boolean processInput(String input) {
@@ -138,14 +122,25 @@ public class Main {
             String[] parts = input.split(" ");
             String horseName = parts[0];
             int amount = Integer.parseInt(parts[1]);
-            Bet bet = new Bet(horseName, amount);
-            if (session != null) {
-                session.send("/app/bet", bet);
-                System.out.println("Bet of " + amount + " on horse " + horseName + " successfully placed.");
+            if (amount <= 0){
+                System.out.println("Bet amounts must be > 0");
+                throw new Exception("Invalid input amount");
             }
+            currentBet = new Bet(horseName, amount);
+            session.subscribe(currentRaceEndpoint, new StompFrameHandler() {
+                @Override
+                public Type getPayloadType(StompHeaders headers) {
+                    return Winner.class;
+                }
+                @Override
+                public void handleFrame(StompHeaders headers, Object payload) {
+                    executorService.execute(new MessageProcessor(payload));
+                }
+            });
+            System.out.println("Bet of "+currentBet.amount+" placed on "+currentBet.horseName+"\n");
             return true; // Return true when processing is successful
         } catch (Exception e) {
-            System.out.println("Invalid input. Please try again.");
+            System.out.println("Invalid input. No bet placed\n");
             return false; // Return false when an error occurs
         }
     }
