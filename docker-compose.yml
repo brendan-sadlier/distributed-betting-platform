@@ -1,31 +1,45 @@
 version: '3'
 services:
 
-#  broker:
-#    build: ./broker
-#    port:
-#    - "8080:8080"
-#    depends_on:
-#      - racegenerator
-#      - racesimulator
-#      - oddsbuilder
-#
-#  racegenerator:
-#    build: ./racegenerator
-#    ports:
-#      - "8083:8083"
-#
-#  racesimulator:
-#    build: ./racesimulator
-#    ports:
-#      - "8081:8081"
-#
-#  oddsbuilder:
-#    build: ./oddsbuilder
-#    ports:
-#      - "8082:8082"
+  bookie:
+    build: ./bookie
+    ports:
+    - "8080:8080"
+    depends_on:
+      - racegenerator
+      - racesimulator
+      - oddsbuilder
+    networks:
+      - backend
 
-  mongodb:
+  racegenerator:
+    build: ./racegenerator
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/blt
+    depends_on:
+      - mongo
+    networks:
+        - backend
+
+  racesimulator:
+    build: ./racesimulator
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/blt
+    networks:
+        - backend
+
+  oddsbuilder:
+    build: ./oddsbuilder
+    ports:
+      - "8082:8082"
+    networks:
+        - backend
+
+  mongo:
     image: mongo:latest
     ports:
       - "27017:27017"
@@ -33,3 +47,10 @@ services:
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
     environment:
       MONGO_INITDB_DATABASE: blt
+    networks:
+      - backend
+
+
+networks:
+  backend:
+    driver: bridge
