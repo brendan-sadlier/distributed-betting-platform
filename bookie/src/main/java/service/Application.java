@@ -13,13 +13,4 @@ public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
-
-    @Bean
-    CommandLineRunner init(BookieController controller) {
-        return args -> {
-            controller.registerService("http://localhost:8080/quotations");
-            controller.registerService("http://localhost:8082/quotations");
-            controller.registerService("http://localhost:8081/quotations");
-        };
-    }
 }

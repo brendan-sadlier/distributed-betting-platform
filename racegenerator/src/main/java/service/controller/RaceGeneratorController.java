@@ -38,7 +38,7 @@ public class RaceGeneratorController {
 
     @GetMapping(value = "/generate-races", produces = "application/json")
     public ResponseEntity<Race> generateRace() {
-        String url = "http://oddsbuilder:8082/odds";
+        String url = "http://oddsbuilder-service:8082/odds";
         Race race = RGService.generateRace();
         RestTemplate template = new RestTemplate();
         HttpEntity<Race> request = new HttpEntity<>(race);

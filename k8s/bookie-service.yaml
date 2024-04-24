@@ -1,0 +1,13 @@
+# bookie-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookie-service
+spec:
+  type: ClusterIP
+  selector:
+    app: bookie
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
