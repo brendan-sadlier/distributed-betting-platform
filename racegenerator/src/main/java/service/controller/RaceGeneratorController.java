@@ -25,6 +25,9 @@ import java.util.Objects;
 @RestController
 public class RaceGeneratorController {
 
+    @Value("${server.port}")
+    private int port;
+
     private final RaceGeneratorService RGService;
 
     // Please do not remove this as it fucks up the Database if it is not here
@@ -35,7 +38,7 @@ public class RaceGeneratorController {
 
     @GetMapping(value = "/generate-races", produces = "application/json")
     public ResponseEntity<Race> generateRace() {
-        String url = "http://localhost:8082/odds";
+        String url = "http://oddsbuilder:8082/odds";
         Race race = RGService.generateRace();
         RestTemplate template = new RestTemplate();
         HttpEntity<Race> request = new HttpEntity<>(race);
@@ -54,13 +57,10 @@ public class RaceGeneratorController {
         return ResponseEntity.ok(horses);
     }
 
-    @Value("${server.port}")
-    private int port;
-
-    private String getHost(String service_host) {
+    private String getHost() {
         try {
-            return service_host + ":" + port;
-        } catch (Exception e) {
+            return InetAddress.getLocalHost().getHostAddress() + ":" + port;
+        } catch (UnknownHostException e) {
             return "localhost:" + port;
         }
     }

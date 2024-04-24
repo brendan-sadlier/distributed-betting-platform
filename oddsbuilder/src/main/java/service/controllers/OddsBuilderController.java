@@ -12,6 +12,10 @@ import service.oddsbuilder.OddsBuilder;
 
 @RestController
 public class OddsBuilderController {
+
+    @Value("${server.port}")
+    private int port;
+
     private final Map<String, Race> races = new TreeMap<>();
     private final OddsBuilder oddsBuilder = new OddsBuilder();
 
@@ -19,7 +23,7 @@ public class OddsBuilderController {
     public ResponseEntity<Race> createOdds(@RequestBody Race race) {
         Race raceWithOdds = oddsBuilder.generateOdds(race);
         races.put(race.dateAndTime.toString(), race);
-        String url = "http://localhost:8082/odds/" + raceWithOdds.dateAndTime.toString();
+        String url = "http://oddsbuilder:8082/odds/" + raceWithOdds.dateAndTime.toString();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .header("Location", url)
@@ -35,9 +39,6 @@ public class OddsBuilderController {
         }
         return ResponseEntity.status(HttpStatus.OK).body(race);
     }
-
-    @Value("${server.port}")
-    private int port;
 
     private String getHost() {
         try {
