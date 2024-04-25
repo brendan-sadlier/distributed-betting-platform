@@ -37,6 +37,7 @@ process repeats.
     ```bash
     minikube start
     kubectl create configmap mongo-init-configmap --from-file=mongo-init.js
+    kubectl apply -f k8s/
     ```
 
     Wait until all the pods are running (this might take a while), you can see the status of the pods using:
@@ -49,7 +50,7 @@ process repeats.
 
     ```bash
     kubectl expose deployment bookie --type=LoadBalancer --port=8080
-    kubectl tunnel
+    minikube tunnel
     ```
 
 5. In the second terminal run:
