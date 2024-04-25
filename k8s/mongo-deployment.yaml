@@ -1,10 +1,9 @@
-# mongo-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongo-deployment
 spec:
-  replicas: 1  # Usually a single replica for MongoDB, consider a stateful set for production
+  replicas: 1
   selector:
     matchLabels:
       app: mongo
