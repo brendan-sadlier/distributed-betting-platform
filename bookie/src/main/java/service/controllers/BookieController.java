@@ -95,7 +95,7 @@ public class BookieController {
         Winner winner = new Winner(winningHorse, currentRace.horseOdds.get(i));
         messagingTemplate.convertAndSend(currentRace.raceEndpoint, winner);
 
-        Thread.sleep(10000);
+        Thread.sleep(3000);
         currentRace = getNewRace();
         currentRaceId += 1;
         currentRace.raceEndpoint = RACE_UPDATES_TOPIC + "/" + currentRaceId;
