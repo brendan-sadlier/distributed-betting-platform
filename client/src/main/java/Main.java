@@ -18,8 +18,8 @@ import java.util.concurrent.Executors;
 
 public class Main {
 
-    // ws://<minikube ip>:<nodePort>/bookie-websocket
-    private static final String URL = "ws://192.168.49.2:30007/bookie-websocket";
+    // ws://<minikube ip>:<bookie service port>/bookie-websocket
+    private static final String URL = "ws://127.0.0.1:8080/bookie-websocket";
     private static StompSession session;
     private static String currentRaceEndpoint;
     private static Bet currentBet;
