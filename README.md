@@ -37,7 +37,7 @@ process repeats.
     ```bash
     minikube start
     kubectl create configmap mongo-init-configmap --from-file=mongo-init.js
-    kubectl apply -f k8s/
+   kubectl apply -f k8s/
     ```
 
     Wait until all the pods are running (this might take a while), you can see the status of the pods using:
