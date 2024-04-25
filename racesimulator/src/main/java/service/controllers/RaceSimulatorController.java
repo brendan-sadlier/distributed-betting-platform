@@ -20,7 +20,7 @@ public class RaceSimulatorController {
     public ResponseEntity<Horse> simulateRace(@RequestBody Race race) {
         Horse winner = simulator.simulateRace(race);
         races.put(race.dateAndTime, winner);
-        String url = "http://" + getHost() + "/races/" + race.dateAndTime;
+        String url = "http://racesimulator-service:8081/races/" + race.dateAndTime;
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .header("Location", url)

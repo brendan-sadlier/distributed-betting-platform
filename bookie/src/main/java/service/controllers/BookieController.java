@@ -10,6 +10,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
@@ -18,11 +20,16 @@ import service.core.Race;
 import service.core.Winner;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 public class BookieController {
     @Value("${server.port}")
     private int port;
+
+    private List<String> servicesUrls = new ArrayList<>();
+
     private final SimpMessagingTemplate messagingTemplate;
     private Race currentRace;
     private int currentRaceId = 0;
@@ -33,6 +40,15 @@ public class BookieController {
     public BookieController(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
         broadCastNewRace();
+    }
+
+
+    @PostMapping(value = "/services", consumes = "application/json")
+    public ResponseEntity<Void> registerService(@RequestBody String url) {
+        servicesUrls.add(url);
+        return ResponseEntity
+                .ok()
+                .build();
     }
 
     @EventListener
@@ -50,10 +66,17 @@ public class BookieController {
         System.out.println("Client disconnected: " + sessionId);
     }
 
-    @Scheduled(fixedRate = 20000, initialDelay = 20000)
+    @Scheduled(fixedRate = 60000, initialDelay = 10000)
     public void simulateCurrentRace() throws InterruptedException {
         System.out.println("Simulating current race");
-        String url = "http://localhost:8081/races/";
+        if (currentRace == null) {
+            currentRace = getNewRace();  // Ensure there is always a race to simulate
+        }
+
+        for (Horse horse : currentRace.horses){
+            System.out.println("Horse in race: "+horse.horseName);
+        }
+        String url = "http://racesimulator-service:8081/races";
         // Create an HttpEntity object that wraps the currentRace object to be sent as request body
         HttpEntity<Race> requestEntity = new HttpEntity<>(currentRace);
         ResponseEntity<Horse> response = template.postForEntity(url, requestEntity, Horse.class);
@@ -68,8 +91,11 @@ public class BookieController {
         Winner winner = new Winner(winningHorse, currentRace.horseOdds.get(i));
         messagingTemplate.convertAndSend(currentRace.raceEndpoint, winner);
 
-        Thread.sleep(1000);
-        broadCastNewRace();
+        Thread.sleep(3000);
+        currentRace = getNewRace();
+        currentRaceId += 1;
+        currentRace.raceEndpoint = RACE_UPDATES_TOPIC + "/" + currentRaceId;
+        messagingTemplate.convertAndSend(RACE_UPDATES_TOPIC, currentRace);
     }
 
     private void broadCastNewRace(){
@@ -80,7 +106,7 @@ public class BookieController {
     }
 
     private Race getNewRace(){
-        String urlRace = "http://localhost:8083/generate-races";
+        String urlRace = "http://racegenerator-service:8083/generate-races";
         ResponseEntity<Race> response = template.getForEntity(urlRace, Race.class);
         Race race = response.getBody();
         assert race != null;
@@ -96,7 +122,7 @@ public class BookieController {
         try {
             return InetAddress.getLocalHost().getHostAddress() + ":";
         } catch (UnknownHostException e) {
-            return "localhost";
+            return "localhost" + port;
         }
     }
 }

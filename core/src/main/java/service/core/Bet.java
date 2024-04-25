@@ -8,7 +8,6 @@ public class Bet {
     }
 
     public Bet() {}
-
     public String horseName;
     public Integer amount;
 }

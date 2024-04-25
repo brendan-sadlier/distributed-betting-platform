@@ -7,6 +7,8 @@ import service.core.Bet;
 import service.core.Horse;
 import service.core.Race;
 import service.core.Winner;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import java.lang.reflect.Type;
 import java.util.Scanner;
@@ -16,7 +18,8 @@ import java.util.concurrent.Executors;
 
 public class Main {
 
-    private static final String URL = "ws://localhost:8080/bookie-websocket";
+    // ws://<minikube ip>:<bookie service port>/bookie-websocket
+    private static final String URL = "ws://127.0.0.1:8080/bookie-websocket";
     private static StompSession session;
     private static String currentRaceEndpoint;
     private static Bet currentBet;
@@ -51,7 +54,10 @@ public class Main {
         private void processBetResult(Winner winner) {
             System.out.println("The winning horse was "+winner.horse.horseName);
             if (currentBet.horseName.equals(winner.horse.horseName)){
-                double amountWon = currentBet.amount * winner.odds;
+                double amount = currentBet.amount * winner.odds;
+                BigDecimal bd = new BigDecimal(amount);
+                bd = bd.setScale(2, RoundingMode.HALF_UP);
+                double amountWon = bd.doubleValue();
                 System.out.println("Congratulations! You have won €"+amountWon+"\n");
             }else{
                 System.out.println("Hard luck, you're horse did not win :(\n");
