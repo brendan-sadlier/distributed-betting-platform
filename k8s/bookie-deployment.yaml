@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookie
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookie
+  template:
+    metadata:
+      labels:
+        app: bookie
+    spec:
+      containers:
+        - name: bookie
+          image: brendansadlier/blt-bookie:latest
+          ports:
+            - containerPort: 8080
