@@ -2,7 +2,7 @@
 
 [Report](./blt-report.pdf)
 
-[Video](INSERT LINK HERE SIMILAR TO REPORT)
+[Video](./blt-video.mp4)
 
 ## Team Members:
 
